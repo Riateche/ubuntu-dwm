@@ -1,0 +1,36 @@
+Source: dwm
+Section: x11
+Priority: optional
+Maintainer: Vasudev Kamath <kamathvasudev@gmail.com>
+Build-Depends: debhelper (>= 8),
+               libx11-dev,
+               libxinerama-dev
+Standards-Version: 3.9.2
+Homepage: http://www.suckless.org/
+Vcs-Git: git://anonscm.debian.org/collab-maint/dwm.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/dwm.git;a=summary
+
+Package: dwm
+Architecture: any
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Recommends: suckless-tools, x11-xserver-utils
+Provides: x-window-manager
+Description: dynamic window manager
+ dwm is a minimalistic window manager. It manages windows in tiling and floating
+ modes. Either mode can be applied dynamically, depending on the application in
+ use and the task performed.
+ .
+ In tiling mode windows are managed in a master and stacking column. The master
+ column contains the window which needs most attention at a time, whereas the
+ stacking column contains all other windows in a stack. Dialog windows are
+ managed floating, however.
+ .
+ In floating mode windows can be resized and moved freely. Windows are grouped
+ by tags. All windows with a specific tag can be viewed at a time. But each
+ window may contain more than one tag, which makes it visible in several views.
+ .
+ Please notice that dwm is currently customized through editing its source code,
+ so you probably want to build your own dwm packages. This package is compiled
+ with the default configuration and should just give you an idea about what dwm
+ brings to your desktop.

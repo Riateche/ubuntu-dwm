@@ -1,0 +1,33 @@
+#!/usr/bin/make -f
+
+SHELL := sh -e
+
+-include /usr/share/dpkg/buildflags.mk
+export CPPFLAGS CFLAGS LDFLAGS
+
+%:
+	dh ${@}
+
+override_dh_auto_clean:
+	rm -f config.h
+	$(MAKE) clean
+
+override_dh_auto_install:
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/dwm PREFIX=/usr
+
+	mv debian/dwm/usr/bin/dwm debian/dwm/usr/bin/dwm.default
+	ln -s dwm.1.gz debian/dwm/usr/share/man/man1/dwm.default.1.gz
+
+	# Building alternatives
+	for ALTERNATIVE in debian/local/config.*.h; \
+	do \
+		$(MAKE) clean; \
+		cp $${ALTERNATIVE} config.h; \
+		CFLAGS="$(CFLAGS)" $(MAKE) PREFIX=/usr; \
+		install -m 0755 dwm debian/dwm/usr/bin/dwm.`basename $${ALTERNATIVE} | cut -d'.' -f 2`; \
+		ln -s dwm.1.gz debian/dwm/usr/share/man/man1/dwm.`basename $${ALTERNATIVE} | cut -d'.' -f 2`.1.gz; \
+	done
+
+	# Configuring maintainer scripts
+	sed -e "s|@ALTERNATIVES@|$(shell find debian/local/ -name 'config.*.h' | cut -d'.' -f 2 | tr '\n' ' ')|" debian/dwm.postinst.in > debian/dwm.postinst
+	sed -e "s|@ALTERNATIVES@|$(shell find debian/local/ -name 'config.*.h' | cut -d'.' -f 2 | tr '\n' ' ')|" debian/dwm.prerm.in > debian/dwm.prerm

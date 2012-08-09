@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=GMail Notifier Configuration
+Name[de]=GMail Notifier Konfiguration
+Icon=evolution
+Type=Application
+Categories=GNOME;GTK;Settings;DesktopSettings;
+Exec=gm-notify-config
+StartupNotify=False
+Terminal=false

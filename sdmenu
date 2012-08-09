@@ -1,0 +1,189 @@
+#!/usr/bin/ruby
+#
+# Author: Sage Imel <sage@iloveco.ws>
+#
+#
+#    Copyright (C) 2011 Sage Imel
+#
+#    Sdmenu is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    Sdmenu is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#-------------------------------------------------------------------------
+#
+
+PATH_BIN = "/usr/bin/dmenu_path"
+LIST_PATH = ENV["HOME"]+"/.sdmenu_list"
+
+
+#Parse the list of commands and number of uses.
+def parse_list list_path
+  list = Hash.new
+  #If the file doesn't exist, don't bother right now.
+  if !File.exist? list_path
+    return list
+  end
+
+  file = File.new list_path
+  file.readlines.each do
+    |app|
+    bin, uses = app.split /\s+/
+    list[bin] = uses.to_i
+  end
+  file.close
+
+  return list
+end
+
+
+
+#Merge the cached list of commands with the new contents of the path. 
+#Remove no longer existant commands from the cache.
+def merge_new list, raw_apps
+  new_list = Hash.new
+
+  raw_apps.each do
+    |app|
+    if list[app].class == NilClass
+      new_list[app] = 0
+    else
+      new_list[app] = list[app]
+    end
+  end
+  return new_list
+end
+
+
+
+#Sorts the commands in the list by number of uses. Returns an array...
+def sort_list list
+  list.sort{|a,b| b[1]<=>a[1]}
+end
+
+
+
+#Writes out the current command cache to the file.
+def write_out_list list, list_path
+  output = File.new list_path, "w"
+  if list.class == Array
+    list.each do
+      |app|
+      output.puts "#{app[0]} #{app[1]}"
+    end
+  elsif list.class == Hash
+    list.each do
+      |app,count|
+      output.puts "#{app} #{count}"
+    end
+  end
+  output.flush
+  output.close
+end
+
+
+
+#Prints the list of commands to standard output.
+def print_list list
+  list.each do
+    |app|
+    puts app[0]
+  end
+end
+
+
+
+#Update the command list to refect one additional use.
+def increment list, entry
+  if list[entry].class != NilClass
+    list[entry] += 1
+  end
+end
+
+
+
+#Parse a command from standard input.
+def read_command
+  input = STDIN.read
+  input.strip!
+  if /(.*?)[ \t]/ =~ input
+    command = $1
+  else
+    command = input
+  end
+  return [input, command]
+end
+
+
+
+#Parse the list.
+if ARGV[0] == "--parse" or ARGV[0] == "-p"
+  list = parse_list LIST_PATH
+  raw_apps = `#{PATH_BIN}`.split "\n"
+  list = merge_new list, raw_apps
+  list = sort_list list
+  write_out_list list, LIST_PATH
+  print_list list
+  exit 0
+#Execute a command.
+elsif ARGV[0] == "--run" or ARGV[0] == "-r"
+  raw_command, command = read_command
+
+  #Run the requested command in a seperate thread
+  process = fork {
+    begin
+      exec raw_command
+    rescue
+      exit 1
+    end
+  }
+
+  #Wait for the file to be available to write too (since it's probably still being used)...
+  busy = true
+  while busy
+    `fuser #{LIST_PATH} $> /dev/null`
+    if $? != 0
+      busy = false
+    end
+    sleep(0.01)
+  end
+
+  #Update the list to reflect the new usage.
+  list = parse_list LIST_PATH
+  increment list, command
+  write_out_list list, LIST_PATH
+
+  #Reap child process and return it's exit status.
+  Process.waitpid(process)
+  exit $?.exitstatus
+
+#Help command.
+elsif ARGV[0] == "--help"
+puts "Usage: sdmenu [OPTION]
+Sorts command in dmenu from most frequently used to least.
+  -p, --parse  parses current dmenu path and merges result with current command list 
+  -r, --run    updates the command list with the command given on standard input, 
+               then switches control to it
+      --help    display this help and exit
+
+This does nothing without being given any arguments.
+
+Examples:
+  sdmenu -p | dmenu | sdmenu -r  It's intended usage. Parses the dmenu_path, updates
+                                 the cache, pipes the output to dmenu, updates the cache
+                                 to reflect the new usage and runs the command."
+  exit 0
+
+#Invalid or no command given.
+else
+  STDERR.puts "Invalid command
+Try `sdmenu --help' for more information."
+  exit 1
+end

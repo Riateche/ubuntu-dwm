@@ -1,0 +1,30 @@
+Source: gm-notify
+Section: mail
+Priority: extra
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Andrew Starr-Bochicchio <a.starr.b@gmail.com>
+XS-Python-Version: >= 2.6
+Build-Depends: debhelper (>= 7),
+		python
+Build-Depends-Indep: python-central (>= 0.6),
+Standards-Version: 3.9.1
+Homepage: https://launchpad.net/gm-notify
+
+Package: gm-notify
+Architecture: all
+XB-Python-Version: ${python:Versions}
+Depends: ${shlibs:Depends},
+	${misc:Depends},
+	${python:Depends},
+	python-indicate,
+	python-notify,
+	python-gst0.10,
+	python-gtk2,
+	python-gconf,
+	python-twisted-words,
+	python-gnomekeyring,
+	python-glade2
+Description: highly Ubuntu integrated GMail notifier
+ gm-notify is a simple, lightweight, and highly Ubuntu integrated
+ GMail notifier which takes advantages of features like notify-osd
+ and indicator-applet.

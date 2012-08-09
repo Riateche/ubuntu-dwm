@@ -1,0 +1,2 @@
+version=3
+http://launchpad.net/gm-notify/+download .*/gm-notify-([0-9.]+)\.tar\.gz

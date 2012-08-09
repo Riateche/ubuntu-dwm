@@ -1,0 +1,54 @@
+<gconfschemafile>
+    <schemalist>
+        <schema>
+            <key>/schemas/apps/gm-notify/play_sound</key>
+            <applyto>/apps/gm-notify/play_sound</applyto>
+            <owner>gm-notify</owner>
+            <type>bool</type>
+            <default>False</default>
+            <locale name="C">
+                <short>Shall we play a sound on new mail?</short>
+            </locale>
+        </schema>
+        <schema>
+            <key>/schemas/apps/gm-notify/ignore_inbox</key>
+            <applyto>/apps/gm-notify/ignore_inbox</applyto>
+            <owner>gm-notify</owner>
+            <type>bool</type>
+            <default>False</default>
+            <locale name="C">
+                <short>If true, there won't be notifications regarding just your inbox.</short>
+            </locale>
+        </schema>
+        <schema>
+            <key>/schemas/apps/gm-notify/soundfile</key>
+            <applyto>/apps/gm-notify/soundfile</applyto>
+            <owner>gm-notify</owner>
+            <type>string</type>
+            <default></default>
+            <locale name="C">
+                <short>Path to the soundfile which should be played when a new mail arrives</short>
+            </locale>
+        </schema>
+        <schema>
+            <key>/schemas/apps/gm-notify/mailboxes</key>
+            <applyto>/apps/gm-notify/mailboxes</applyto>
+            <owner>gm-notify</owner>
+            <type>list</type>
+            <list_type>string</list_type>
+            <locale name="C">
+                <short>List containing mailboxes to check</short>
+            </locale>
+        </schema>
+        <schema>
+            <key>/schemas/apps/gm-notify/openclient</key>
+            <applyto>/apps/gm-notify/openclient</applyto>
+            <owner>gm-notify</owner>
+            <type>bool</type>
+            <default>False</default>
+            <locale name="C">
+                <short>Shall we open the default mail client or webinterface?</short>
+            </locale>
+        </schema>
+    </schemalist>
+</gconfschemafile>

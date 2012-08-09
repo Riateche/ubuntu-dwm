@@ -1,0 +1,29 @@
+#!/bin/sh
+
+set -e
+
+ALTERNATIVES="@ALTERNATIVES@"
+
+case "${1}" in
+	remove|deconfigure)
+		update-alternatives --quiet --remove dwm /usr/bin/dwm.default
+
+		for ALTERNATIVE in ${ALTERNATIVES}
+		do
+			update-alternatives --quiet --remove dwm /usr/bin/dwm.${ALTERNATIVE}
+		done
+		;;
+
+	upgrade|failed-upgrade)
+
+		;;
+
+	*)
+		echo "prerm called with unknown argument \`${1}'" >&2
+		exit 1
+		;;
+esac
+
+#DEBHELPER#
+
+exit 0

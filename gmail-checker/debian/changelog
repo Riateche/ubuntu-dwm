@@ -1,0 +1,24 @@
+gm-notify (0.10.3-0ubuntu2) oneiric; urgency=low
+
+  * debian/control: Add missing dependency on
+    python-glade2 (LP: # 863855).
+  * debian/copyright: Tweak to bring up to latest
+    DEP-5 spec.
+
+ -- Andrew Starr-Bochicchio <a.starr.b@gmail.com>  Sat, 01 Oct 2011 03:03:20 -0400
+
+gm-notify (0.10.3-0ubuntu1) maverick; urgency=low
+
+  * New upstream bug fix release.
+   - Fix CPU usage issue with subprocess.call. (LP: #616781)
+  * debian/patches/scripts-with-extensions-in-PATH:
+   - Drop, included upstream.
+  * debian/control: Bump Standards-Version to 3.9.1.
+
+ -- Andrew Starr-Bochicchio <a.starr.b@gmail.com>  Sat, 18 Sep 2010 15:41:02 -0400
+
+gm-notify (0.10.2-0ubuntu1) maverick; urgency=low
+
+  * Initial release (LP: #596313).
+
+ -- Andrew Starr-Bochicchio <a.starr.b@gmail.com>  Thu, 01 Jul 2010 11:28:14 -0400

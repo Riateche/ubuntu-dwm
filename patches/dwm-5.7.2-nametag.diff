@@ -1,0 +1,70 @@
+diff -r 2bcd25cce4ab config.def.h
+--- a/config.def.h	Sun Sep 27 20:20:14 2009 +0100
++++ b/config.def.h	Thu Oct 29 12:27:26 2009 -0700
+@@ -14,7 +14,8 @@
+ static const Bool topbar            = True;     /* False means bottom bar */
+ 
+ /* tagging */
+-static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
++#define MAX_TAGLEN 16
++static char tags[][MAX_TAGLEN] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+ 
+ static const Rule rules[] = {
+ 	/* class      instance    title       tags mask     isfloating   monitor */
+@@ -71,6 +72,7 @@
+ 	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
+ 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
+ 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
++	{ MODKEY,                       XK_n,      nametag,        {0} },
+ 	TAGKEYS(                        XK_1,                      0)
+ 	TAGKEYS(                        XK_2,                      1)
+ 	TAGKEYS(                        XK_3,                      2)
+diff -r 2bcd25cce4ab config.mk
+--- a/config.mk	Sun Sep 27 20:20:14 2009 +0100
++++ b/config.mk	Thu Oct 29 12:27:26 2009 -0700
+@@ -19,7 +19,7 @@
+ LIBS = -L/usr/lib -lc -L${X11LIB} -lX11 ${XINERAMALIBS}
+ 
+ # flags
+-CPPFLAGS = -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS}
++CPPFLAGS = -D_BSD_SOURCE -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS}
+ #CFLAGS = -g -std=c99 -pedantic -Wall -O0 ${INCS} ${CPPFLAGS}
+ CFLAGS = -std=c99 -pedantic -Wall -Os ${INCS} ${CPPFLAGS}
+ #LDFLAGS = -g ${LIBS}
+diff -r 2bcd25cce4ab dwm.c
+--- a/dwm.c	Sun Sep 27 20:20:14 2009 +0100
++++ b/dwm.c	Thu Oct 29 12:27:26 2009 -0700
+@@ -195,6 +195,7 @@
+ static void maprequest(XEvent *e);
+ static void monocle(Monitor *m);
+ static void movemouse(const Arg *arg);
++static void nametag(const Arg *arg);
+ static Client *nexttiled(Client *c);
+ static Monitor *ptrtomon(int x, int y);
+ static void propertynotify(XEvent *e);
+@@ -1240,6 +1241,25 @@
+ 	}
+ }
+ 
++void
++nametag(const Arg *arg) {
++	char *cp, name[MAX_TAGLEN];
++	FILE *fp;
++	int i;
++
++	if(!(fp = (FILE*)popen("echo -n | dmenu", "r")))
++		fprintf(stderr, "dwm: Could not popen 'echo -n | dmenu'\n");
++	cp = fgets(name, MAX_TAGLEN, fp);
++	pclose(fp);
++	if(cp == NULL)
++		return;
++
++	for(i = 0; i < LENGTH(tags); i++)
++		if(selmon->tagset[selmon->seltags] & (1 << i))
++			memcpy(tags[i], name, MAX_TAGLEN);
++	drawbars();
++}
++
+ Client *
+ nexttiled(Client *c) {
+ 	for(; c && (c->isfloating || !ISVISIBLE(c)); c = c->next);

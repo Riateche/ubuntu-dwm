@@ -1,0 +1,18 @@
+Description: Modified terminal emulator used by dwm
+ By default dwm uses uxterm as terminal emulator
+ this is modified now to use x-terminal-emulator
+ command instead
+Author: Vasudev Kamath <kamathvasudev@gmail.com>
+Forwarded: not-needed
+Last-Update: 2011-11-04
+--- a/config.def.h
++++ b/config.def.h
+@@ -46,7 +46,7 @@
+ 
+ /* commands */
+ static const char *dmenucmd[] = { "dmenu_run", "-fn", font, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
+-static const char *termcmd[]  = { "uxterm", NULL };
++static const char *termcmd[]  = { "x-terminal-emulator", NULL };
+ 
+ static Key keys[] = {
+ 	/* modifier                     key        function        argument */

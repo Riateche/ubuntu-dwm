@@ -1,0 +1,162 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# gm-notify v0.10.3
+# a simple and lightweight GMail-Notifier for ubuntu and notify-osd
+#
+# Copyright (c) 2009-2010, Alexander Hungenberg <alexander.hungenberg@gmail.com>
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+import os
+import sys
+import subprocess
+import gettext
+import webbrowser
+
+import pynotify
+import gst # for sound
+import gconf
+from twisted.internet import glib2reactor
+glib2reactor.install()
+from twisted.internet import reactor
+from twisted.words.protocols.jabber import jid
+
+from gtalk import MailChecker
+
+_ = gettext.translation('gm-notify', fallback=True).ugettext
+
+MAILBOXES_NAMES = { "inbox": _("Inbox") }
+
+MAILBOXES_URLS = {  "inbox": "" }
+
+from config import credentials
+
+class PathNotFound(Exception): pass
+
+def get_executable_path(name):
+    path = "%s/%s" % (os.getcwd(), name)
+    if os.path.exists(path) and os.access(path, os.X_OK): return path
+    path = "/usr/local/bin/" + name
+    if os.path.exists(path) and os.access(path, os.X_OK): return path
+    path = "/usr/bin/" + name
+    if os.path.exists(path) and os.access(path, os.X_OK): return path
+    raise PathNotFound("%s not found" % name)
+
+class CheckMail():
+    def __init__(self):
+        '''initiates DBUS-Messaging interface, creates the MailChecker and registers with indicator-applet.
+        In the end it starts the periodic check timer and a gtk main-loop'''
+        
+        # Kill running gm-notify processes (UGLY!)
+        subprocess.call("kill `pgrep -f gm-notify | grep -v %s`" % os.getpid(), stdout=open("/dev/null", "w"), shell=True)
+        
+        # Initiate pynotify and Gnome Keyring
+        if not pynotify.init(_("GMail Notifier")):
+            sys.exit(-1)
+        
+        self.creds = credentials
+
+        # check if we use Google Apps to start the correct webinterface
+        gmail_domains = ['gmail.com','googlemail.com']
+        self.jid = jid.JID(self.creds[0])
+        if self.jid.host in gmail_domains:
+            self.domain = None
+        else:
+            self.domain = self.jid.host
+        
+        # init gconf to read config values
+        self.client = gconf.client_get_default()
+        
+        # init sound
+        soundfile = self.client.get_string("/apps/gm-notify/soundfile") # for sound
+        if self.client.get_bool("/apps/gm-notify/play_sound") and soundfile:
+            self.player = gst.element_factory_make("playbin", "player")
+            self.player.set_property("video-sink", gst.element_factory_make("fakesink", "fakesink"))
+            self.player.set_property("uri", "file://" + soundfile)
+            bus = self.player.get_bus()
+            bus.add_signal_watch()
+            bus.connect("message", self.gst_message)
+        else:
+            self.player = None
+        
+        # Read /apps/gm-notify/ignore_inbox value. If true you will only receive
+        # notifications about configured labels
+        self.ignore_inbox = self.client.get_bool("/apps/gm-notify/ignore_inbox")
+        
+        # Retrieve the mailbox we're gonna check
+        self.checker = MailChecker(self.jid, self.creds[1], [], self.new_mail, self.update_count)
+        self.checker.connect()
+        
+        reactor.run()
+    
+    def gst_message(self, bus, message):
+        if message.type == gst.MESSAGE_EOS:
+            self.player.set_state(gst.STATE_NULL)
+        elif message.type == gst.MESSAGE_ERROR:
+            self.player.set_state(gst.STATE_NULL)
+            print "Error: %s - %s" % message.parse_error()
+    
+    def serverClick(self, server, timestamp=None):
+        '''called when the server is clicked in the indicator-applet and performs a Mail Check'''
+        print "Draw attention = false"
+        
+        if self.player: self.player.set_state(gst.STATE_NULL)
+        self.checker.queryInbox()
+    
+    def update_count(self, count):
+        for mailbox in count.iteritems():
+            if mailbox[0] == "inbox" and self.ignore_inbox:
+                continue
+            
+            f = open( os.path.expanduser("~/.dwm/mail_count"), "w" )
+            f.write(str(mailbox[1]))
+    
+    def new_mail(self, mails):
+        '''Takes mailbox name and titles of mails, to display notification and add indicators'''
+        text = ""
+        # aggregate the titles of the messages... cut the string if longer than 30 chars
+        for mail in mails:
+            got_label = False
+            for label in mail['labels']:
+                if label == u"^i": label = "inbox"
+            if not got_label and self.ignore_inbox: continue
+            
+            if "sender_name" in mail: text += mail['sender_name'] + ":\n"
+            elif "sender_address" in mail: text += mail['sender_address'] + ":\n"
+            
+            if "subject" in mail and mail['subject']:
+                title = mail['subject']
+                if len(title) > 30:
+                    title = title[:30] + "..."
+            elif "snippet" in mail and mail['snippet']:
+                title = mail['snippet'][:30] + "..."
+            else:
+                title = _("(no content)")
+            text += "- " + title + "\n"
+            
+        if text:
+            self.showNotification(_("Incoming message"), text.strip("\n"))
+            if self.player: self.player.set_state(gst.STATE_PLAYING)
+    
+    def showNotification(self, title, message):
+        '''takes a title and a message to display the email notification. Returns the
+        created notification object'''
+        
+        n = pynotify.Notification(title, message, "notification-message-email")
+        n.show()
+        
+        return n
+    
+cm = CheckMail()

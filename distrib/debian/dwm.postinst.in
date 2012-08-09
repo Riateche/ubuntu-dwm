@@ -1,0 +1,29 @@
+#!/bin/sh
+
+set -e
+
+ALTERNATIVES="@ALTERNATIVES@"
+
+case "${1}" in
+	configure)
+		update-alternatives --quiet --install /usr/bin/dwm dwm /usr/bin/dwm.default 100
+
+		for ALTERNATIVE in ${ALTERNATIVES}
+		do
+			update-alternatives --quiet --install /usr/bin/dwm dwm /usr/bin/dwm.${ALTERNATIVE} 50
+		done
+		;;
+
+	abort-upgrade|abort-remove|abort-deconfigure)
+
+		;;
+
+	*)
+		echo "postinst called with unknown argument \`${1}'" >&2
+		exit 1
+		;;
+esac
+
+#DEBHELPER#
+
+exit 0
